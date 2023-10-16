@@ -1,39 +1,58 @@
 #!/usr/bin/python3
+
 """
-Description: This module
-    serializes instances to a JSON file and deserializes JSON file to instances
+FileStorage class handles storage and
+reload of instances
 """
-from json import dump, load
-import models
+from json import loads, dump
+from models.user import User
+from models.base_model import BaseModel
+from models.amenity import Amenity
+from models.city import City
+from models.review import Review
+from models.state import State
+from models.place import Place
+from os.path import exists
 
 
-class FileStorage():
-
+class FileStorage:
+    """Storage class, allows for CRUD operations on objects"""
     __file_path = "file.json"
     __objects = {}
 
     def all(self):
-        """Returns the dict of _objects"""
-        return FileStorage.__objects
+        """Returns all stored objects"""
+        return self.__objects
 
     def new(self, obj):
-        FileStorage.__objects[obj.__class__.__name__ + "." + str(obj.id)] = obj
+        """Creates new object"""
+        attr = "{}.{}".format(type(obj).__name__, obj.id)
+        self.__objects[attr] = obj
 
     def save(self):
-        serial_Obj = {}
-        for key, value in FileStorage.__objects.items():
-            serial_Obj[key] = value.to_dict()
-        with open(FileStorage.__file_path, mode="w", encoding="utf-8") as\
-                new_json:
-            dump(serial_Obj, new_json)
+        """Save objects to output.json"""
+        serialized_objects = {}
+        for key, obj in self.__objects.items():
+            serialized_objects[key] = obj.to_dict()
+        with open(self.__file_path, "w") as f:
+            dump(serialized_objects, f)
 
     def reload(self):
-        try:
-            with open(FileStorage.__file_path, encoding="UTF8") as new_json:
-                FileStorage.__objects = load(new_json)
-                for key, value in FileStorage.__objects.items():
-                    class_name = value["__class__"]
-                    class_name = models.classes[class_name]
-                    FileStorage.__objects[key] = class_name(**value)
-        except FileNotFoundError:
-            pass
+        """Reads from output.json to load objects"""
+        current_classes = {
+            'BaseModel': BaseModel,
+            'User': User,
+            'Amenity': Amenity,
+            'City': City,
+            'Place': Place,
+            'Review': Review,
+            'State': State
+        }
+        if (exists(self.__file_path)):
+            with open(self.__file_path, "r") as f:
+                data = f.read()
+            json_decode = loads(data)
+            for key, value in json_decode.items():
+                class_name = value['__class__']
+                if class_name in current_classes:
+                    self.__objects[key] = current_classes[class_name](**value)
