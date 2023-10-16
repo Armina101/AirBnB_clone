@@ -26,29 +26,29 @@ class BaseModel():
             **Kwargs: Key/value pairs of attributes.
     """
     def __init__(self, *args, **kwargs):
+
         if kwargs:
-            exclude_keys = ['__class__']
             for key, value in kwargs.items():
-                if key not in exclude_keys:
-                    if key == 'created_at' or key == 'updated_at':
-                        value = \
-                            datetime.strptime(value, "%Y-%m-%dT%H:%M:%S.%f")
+                if key == "created_at" or key == "updated_at":
+                    value = datetime.strptime(value, "%Y-%m-%dT%H:%M:%S.%f")
+                if key != "__class__":
                     setattr(self, key, value)
         else:
             self.id = str(uuid4())
             self.created_at = datetime.now()
-            self.updated_at = self.created_at
+            self.updated_at = datetime.now()
             models.storage.new(self)
 
+
     def __str__(self):
-        return "[{}] ({}) {}".format(
-                        self.__class__.__name__,
-                        self.id,
-                        self.__dict__
-                    )
+        classname = "[{}] ".format(self.__class__.__name__)
+        id = "({}) ".format(self.id)
+        dict = "{}".format(self.__dict__)
+        return classname + id + dict
 
     def save(self):
         self.updated_at = datetime.now()
+        models.storage.new(self)
         models.storage.save()
 
     def to_dict(self):
@@ -62,8 +62,8 @@ class BaseModel():
                   The created_at and updated_at attributes are converted
                   to string objects in ISO format.
         """
-        obj_dict = self.__dict__.copy()
-        obj_dict['__class__'] = self.__class__.__name__
-        obj_dict['created_at'] = self.created_at.isoformat()
-        obj_dict['updated_at'] = self.updated_at.isoformat()
-        return obj_dict
+        my_dict = self.__dict__.copy()
+        my_dict['__class__'] = self.__class__.__name__
+        my_dict['created_at'] = self.created_at.isoformat()
+        my_dict['updated_at'] = self.updated_at.isoformat()
+        return my_dict
